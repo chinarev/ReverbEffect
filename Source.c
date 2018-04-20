@@ -6,19 +6,18 @@
 /* < ------- first attempt, not useable ------- >
 int getDataSound(FILE *file, long offset, int startPoint, int numberFluctuations, int bytePerSample, int *soundArray, int *errorCode)
 {
-	int i;                      // Èòåðàòîð
-	int j;                      // Èòåðàòîð
-	int *bitBuffer;             // Âðåìåííûé áóôôåð äëÿ õðàíåíèÿ îäíîãî êîëåáàíèÿ
-
-								// Âûäåëåíèå ïàìÿòè ïîä âðåìåííûé áóôôåð
+	int i;                      // Итератор
+	int j;                      // Итератор
+	int *bitBuffer;             // Временный буффер для хранения одного колебания
+								// Выделение памяти под временный буффер
 	bitBuffer = (int *)malloc(bytePerSample * sizeof(int));
 
-	// Ñìåùåíèå
+	// Смещение
 	fseek(file, offset, startPoint);
 
 	for (i = 0; i < numberFluctuations; ++i)
 	{
-		// Ïîáàéòîâîå ÷òåíèå äàííûõ îá îäíîì êîëåáàíèè è ïðåîáðàçîâàíèå â ìàññèâ äàííûõ int
+		//  Побайтовое чтение данных об одном колебании и преобразование в массив данных int
 		for (j = 0; j < bytePerSample; ++j)
 		{
 			bitBuffer[j] = fgetc(file);
@@ -49,7 +48,7 @@ int byteToInt(unsigned char *bytes, int numbytes)
 	return result;
 }
 
-// Ïðåîáðàçîâàíèå ÷èñëà â ìàññèâ äàííûõ
+// Преобразование числа в массив данных
 void intToByte(int number, int *result, int numBytes)
 {
 	int i;
@@ -63,7 +62,7 @@ void intToByte(int number, int *result, int numBytes)
 	}
 }
 
-// Ïåðåâîä ìàññèâà áàéò â ìàññèâ àìïëèòóä
+// Перевод массива байт в массив амплитуд
 void byteArrayToAmplitude(unsigned char *byteArray, int *amplitudeArray, int numberFluctuations, int bytePerSample)
 {
 	int i;
@@ -84,7 +83,7 @@ void byteArrayToAmplitude(unsigned char *byteArray, int *amplitudeArray, int num
 	}
 }
 
-// Ïåðåâîä ìàññèâà àìïëèòóä â ìàññèâ áàéò
+// Перевод массива амплитуд в массив байт
 void AmplitudeArrayToByte(unsigned char *byteArray, unsigned int *amplitudeArray, int numberFluctuations, int bytePerSample)
 {
 	int i;
@@ -104,38 +103,38 @@ void AmplitudeArrayToByte(unsigned char *byteArray, unsigned int *amplitudeArray
 	}
 }
 
-int main(int argc, char* argv[]) // () - äëÿ ðàáîòû ñ êîìàíäíîé ñòðîêè
+int main(int argc, char* argv[]) // command line
 {
-	int numChannels;            // Êîëè÷åñòâî êàíàëîâ
-	int sampleRate;             // ×àñòîòà äèñêðåòèçàöèè
-	int bitPerSample;           // Êîëè÷åñòâî áèò â ñýìïëå
-	int bytePerSample;          // Êîëè÷åñòâî áàéò â ñýìïëå
-	int numberFluctuations;     // Êîëè÷åñòâî êîëåáàíèé â ñýìïëå
-	int subchunk2Size;          // Êîëè÷åñòâî áàéò â îáëàñòè äàííûõ
-	int levels;                 // Êîëè÷åñòâî óðîâíåé àìïëèòóäû
-	unsigned int *soundArray;   // Ìàññèâ äëÿ âðåìåííîãî õðàíåíèÿ êîëåáàíèé
+	int numChannels;            // Количество каналов
+	int sampleRate;             // Частота дискретизации
+	int bitPerSample;           // Количество бит в сэмпле
+	int bytePerSample;          // Количество байт в сэмпле
+	int numberFluctuations;     // Количество колебаний в сэмпле
+	int subchunk2Size;          // Количество байт в области данных
+	int levels;                 // Количество уровней амплитуды
+	unsigned int *soundArray;   // Массив для временного хранения колебаний
 
-	int errorCode;              // Ñîäåðæèò êîä îøèáêè
-	int multiplier;             // Ìíîæèòåëü
-	int i;                      // Èòåðàòîð
-	int j;                      // Èòåðàòîð
-	int k;                      // Èòåðàòîð
-	unsigned char *header;      // Ìàññèâ äëÿ õðàíåíèÿ çàãîëîâêà ôàéëà
-	unsigned char *body;        // Ìàññèâ äëÿ õðàíåíèÿ òåëà èñõîäíîãî ôàéëà
-	unsigned char *releaseBody; // Ìàññèâ äëÿ õðàíåíèÿ òåëà îáðàáîòàííîãî ôàéëà
-	FILE *sound;                // Óêàçàòåëü íà ôàéë äëÿ ÷òåíèÿ ñýìïëà
-	FILE *release;              // Óêàçàòåëü íà ôàéë äëÿ çàïèñè ñýìïëà
+	int errorCode;              // Содержит код ошибки
+	int multiplier;             // Множитель
+	int i;                      // Итератор
+	int j;                      // Итератор
+	int k;                      // Итератор
+	unsigned char *header;      // Массив для хранения заголовка файла
+	unsigned char *body;        // Массив для хранения тела исходного файла
+	unsigned char *releaseBody; // Массив для хранения тела обработанного файла
+	FILE *sound;                // Указатель на файл для чтения сэмпла
+	FILE *release;              // Указатель на файл для записи сэмпла
 
 	int *temp;
 
-	// Îòêðûâàåì ôàéë, ÷åðåç ïàðàìåòð êîìàíäíîé ñòðîêè
+	// Открываем файл, через параметр командной строки
 	
 	sound = fopen(argv[1], "rb");;
 
-	// Âûäåëåíèå ïàìÿòè ïîä çàãîëîâîê ôàéëà
+	// Выделение памяти под заголовок файла
 	header = (unsigned char *)malloc(44 * sizeof(unsigned char));
 
-	// ×òåíèå çàãîëîâêà ôàéëà
+	// Чтение заголовка файла
 	fread(header, 1, 44, sound);
 
 	numChannels = byteToInt(header + 22, 2);
@@ -143,11 +142,11 @@ int main(int argc, char* argv[]) // () - äëÿ ðàáîòû ñ êîìàíäíî
 	bitPerSample = byteToInt(header + 34, 2);
 	subchunk2Size = byteToInt(header + 40, 4);
 
-	// Âû÷èñëåíèå äîïîëíèòåëüíûõ ïàðàìåòðîâ íà îñíîâå îñíîâíûõ ïîëó÷åííûõ äàííûõ
+	// Вычисление дополнительных параметров на основе основных полученных данных
 	bytePerSample = bitPerSample / 8;
 	numberFluctuations = subchunk2Size / bytePerSample;
 
-	// Âûâîä èíôîðìàöèè î ñýìïëå
+	// Вывод информации о сэмпле
 	printf("numChannels = %d\n", numChannels);
 	printf("sampleRate = %d\n", sampleRate);
 	printf("bitPerSample = %d\n", bitPerSample);
@@ -155,38 +154,38 @@ int main(int argc, char* argv[]) // () - äëÿ ðàáîòû ñ êîìàíäíî
 	printf("bytePerSample = %d\n", bytePerSample);
 	printf("numberFluctuations = %d\n", numberFluctuations);
 
-	// Âûäåëåíèå ïàìÿòè ïîä òåëî ôàéëà
+	// Выделение памяти под тело файла
 	body = (unsigned char *)malloc(subchunk2Size * sizeof(unsigned char));
 
-	// ×òåíèå òåëà ôàéëà
+	// Чтение тела файла
 	fread(body, 1, subchunk2Size, sound);
 
-	// Âûäåëåíèå ïàìÿòè ïîä ìàññèâ àìïëèòóä
+	// Выделение памяти под массив амплитуд
 	soundArray = (unsigned int *)malloc(numberFluctuations * sizeof(unsigned int));
 
-	// Ïåðåâîä ìàññèâà áàéò â ìàññèâ àìïëèòóä
+	// Перевод массива байт в массив амплитуд
 	byteArrayToAmplitude(body, soundArray, numberFluctuations, bytePerSample);
 
-	// Î÷èùåíèå ïàìÿòè, çàíèìàåìîé ìàññèâîì áàéò èñõîäíîãî ôàéëà
+	// Очищение памяти, занимаемой массивом байт исходного файла
 	free(body);
 
-	// Îáðàáîòêà ìàññèâà àìïëèòóä
+	// Обработка массива амплитуд
 	for (i = 0; i < numberFluctuations - 10; ++i)
 	{
 		/*
-		Àëåêñàíäð Ïàâëîâè÷, 
+		Александр Павлович, 
 
-		Â ýòîì öèêëå äîëæíà ïðîèñõîäèòü íåïîñðåäñòâåííî ðàáîòà ñî çâóêîì, ò.å. íàëîæåíèå íóæíûõ ýôôåêòîâ è ò.ï.
-		ß ïðîáîâàë ðàçëè÷íûå ñïîñîáû, íî îíè â 90% ñëó÷àåâ ïðîñòî èñêàæàëè çâóêîâîé ôàéë ðàçëè÷íûìè ñêðèïàìè, õðàïàìè è óëüòðàçâóêîì.
-		Íèæå åäèíñòâåííàÿ ñòðîêà, êîòîðàÿ õîòü íåìíîãî íàêëàäûâàåò íå÷òî ïîõîæåå íà ðåâåðáåðàöèþ è â òî æå âðåìÿ íå óáèâàåò âñþ äîðîæêó.
+		В этом цикле должна происходить непосредственно работа со звуком, т.е. наложение нужных эффектов и т.п.
+		Я пробовал различные способы, но они в 90% случаев просто искажали звуковой файл различными скрипами, храпами и ультразвуком.
+		Ниже единственная строка, которая хоть немного накладывает нечто похожее на реверберацию и в то же время не убивает всю дорожку.
 		*/
 		soundArray[i] += soundArray[i + 10];
 	}
 
-	// Âûäåëåíèå ïàìÿòè ïîä ìàññèâ áàéò ðåçóëüòèðóþùåãî ôàéëà
+	// Выделение памяти под массив байт результирующего файла
 	releaseBody = (unsigned char *)malloc(subchunk2Size * sizeof(unsigned char) );
 
-	// Ïåðåâîä ìàññèâà àìïëèòóä â ìàññèâ áàéò
+	// Перевод массива амплитуд в массив байт
 	AmplitudeArrayToByte(releaseBody, soundArray, numberFluctuations, bytePerSample);
 
 	release = fopen("release.wav", "wb");
